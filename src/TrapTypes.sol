@@ -7,5 +7,6 @@ struct TrapAlert {
     uint256 observed;
     uint256 expected;
     uint256 blockNumber;
+    bytes32 environmentId;
     bytes context;
 }
