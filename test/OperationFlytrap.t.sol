@@ -96,7 +96,7 @@ contract TrapLifecycleTest is TestBase {
 
 contract ResponseAuthorizationTest is TestBase {
     function testOnlyDroseraCanCallResponse() public {
-        BonqDaoOracleManipulationResponse response = new BonqDaoOracleManipulationResponse();
+        BonqDaoOracleManipulationResponse response = new BonqDaoOracleManipulationResponse(REGISTRY_ADDR);
         TrapAlert memory alert = TrapAlert({
             invariantId: keccak256("BONQ_ORACLE_COLLATERAL_DIVERGENCE_V2"),
             target: TARGET,
@@ -112,7 +112,7 @@ contract ResponseAuthorizationTest is TestBase {
     }
 
     function testResponseRejectsWrongInvariant() public {
-        BonqDaoOracleManipulationResponse response = new BonqDaoOracleManipulationResponse();
+        BonqDaoOracleManipulationResponse response = new BonqDaoOracleManipulationResponse(REGISTRY_ADDR);
         TrapAlert memory alert = TrapAlert(bytes32(uint256(1)), TARGET, 1, 0, block.number, ENVIRONMENT_ID, bytes(""));
         vm.prank(DROSERA);
         bool reverted;

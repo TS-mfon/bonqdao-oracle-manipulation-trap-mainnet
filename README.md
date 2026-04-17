@@ -42,12 +42,11 @@ The registry supplies:
 - `protocolGuardian`
 - `active`
 
-Before deploying for a real environment, replace the `REGISTRY` constant in:
+Before deploying for a real environment, replace the `REGISTRY` constant in the trap:
 
 - `src/BonqDaoOracleManipulationTrap.sol`
-- `src/BonqDaoOracleManipulationResponse.sol`
 
-Then rebuild and update `drosera.toml`.
+The response receives the registry address in its constructor. Then rebuild and update `drosera.toml`.
 
 ## Metrics Assumed Trustworthy
 
@@ -158,7 +157,7 @@ forge script script/DeployHoodiSimulation.s.sol:DeployHoodiSimulation \
 After deployment:
 
 - copy the deployed response address into `drosera.toml`;
-- copy the deployed registry address into the trap and response constants;
+- copy the deployed registry address into the trap `REGISTRY` constant;
 - rebuild with `forge build`;
 - run `drosera dryrun`.
 
