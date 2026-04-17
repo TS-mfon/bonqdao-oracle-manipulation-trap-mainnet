@@ -1,0 +1,14 @@
+ethereum_rpc = "https://ethereum-rpc.publicnode.com"
+drosera_rpc = "https://relay.testnet.drosera.io"
+eth_chain_id = 1
+
+[traps.bonqdao_oracle_manipulation_trap_mainnet]
+path = "out/BonqDaoOracleManipulationTrap.sol/BonqDaoOracleManipulationTrap.json"
+response_contract = "0x0000000000000000000000000000000000000000"
+response_function = "handleIncident((bytes32,address,uint256,uint256,uint256,bytes))"
+cooldown_period_blocks = 0
+min_number_of_operators = 1
+max_number_of_operators = 2
+block_sample_size = 10
+private_trap = false
+whitelist = []
