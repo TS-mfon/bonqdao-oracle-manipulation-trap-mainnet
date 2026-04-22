@@ -42,11 +42,7 @@ The registry supplies:
 - `protocolGuardian`
 - `active`
 
-Before deploying for a real environment, replace the `REGISTRY` constant in the trap:
-
-- `src/BonqDaoOracleManipulationTrap.sol`
-
-The response receives the registry address in its constructor. Then rebuild and update `drosera.toml`.
+The trap imports `src/TrapDeployConfig.sol`. For the mainnet repo you still need to update that config file to the intended registry address before rebuilding. The response receives the registry address in its constructor.
 
 ## Metrics Assumed Trustworthy
 
@@ -81,7 +77,7 @@ The trap requires `10` samples, newest first. It does not trigger on:
 - already paused target;
 - insufficient samples.
 
-It triggers only when the latest sample breaches the invariant and the recent sample window confirms persistent breach.
+It triggers only when the latest sample breaches the invariant and at least `2` of the newest `5` samples also breach under the same `environmentId`, `registry`, and `target`.
 
 Invariant id:
 
@@ -106,7 +102,8 @@ The response contract:
 - validates `alert.target`;
 - validates registry `responseExecutor == address(this)`;
 - applies a 20 block cooldown;
-- calls `emergencyPause()` on the monitored target.
+- calls `emergencyPause()` on the monitored target;
+- reverts if `emergencyPause()` fails, so containment cannot be reported as successful when the protocol remains unpaused.
 
 The response function signature in Drosera must stay exactly:
 

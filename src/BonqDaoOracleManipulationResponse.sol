@@ -31,6 +31,7 @@ contract BonqDaoOracleManipulationResponse {
     error WrongTarget();
     error WrongResponseExecutor();
     error CooldownActive();
+    error PauseFailed(bytes returnData);
 
     constructor(address registry_) {
         REGISTRY = registry_;
@@ -46,11 +47,12 @@ contract BonqDaoOracleManipulationResponse {
         if (registry.monitoredTarget() != alert.target) revert WrongTarget();
         if (registry.responseExecutor() != address(this)) revert WrongResponseExecutor();
         if (lastHandledBlock != 0 && block.number < lastHandledBlock + COOLDOWN_BLOCKS) revert CooldownActive();
+        (bool success, bytes memory returnData) = alert.target.call(abi.encodeWithSignature("emergencyPause()"));
+        emit PauseAttempted(alert.target, success, returnData);
+        if (!success) revert PauseFailed(returnData);
         incidentHandled = true;
         lastHandledBlock = block.number;
         lastAlert = alert;
-        (bool success, bytes memory returnData) = alert.target.call(abi.encodeWithSignature("emergencyPause()"));
-        emit PauseAttempted(alert.target, success, returnData);
         emit IncidentHandled(alert.invariantId, alert.environmentId, alert.target, alert.observed, alert.expected, alert.blockNumber);
     }
 }

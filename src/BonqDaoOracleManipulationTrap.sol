@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {ITrap} from "./ITrap.sol";
 import {TrapAlert} from "./TrapTypes.sol";
+import {TrapDeployConfig} from "./TrapDeployConfig.sol";
 
 interface IBonqDaoOracleManipulationEnvironmentRegistryView {
     function environmentId() external view returns (bytes32);
@@ -15,7 +16,7 @@ interface IBonqDaoOracleManipulationTarget {
 }
 
 contract BonqDaoOracleManipulationTrap is ITrap {
-    address public constant REGISTRY = address(0x0000000000000000000000000000000000003001);
+    address public constant REGISTRY = TrapDeployConfig.REGISTRY;
     bytes32 public constant INVARIANT_ID = keccak256("BONQ_ORACLE_COLLATERAL_DIVERGENCE_V2");
     uint256 public constant REQUIRED_SAMPLES = 10;
     uint8 internal constant STATUS_OK = 0;
@@ -95,7 +96,12 @@ contract BonqDaoOracleManipulationTrap is ITrap {
         CollectOutput memory latest = abi.decode(data[0], (CollectOutput));
         CollectOutput memory historical = abi.decode(data[data.length - 1], (CollectOutput));
         if (latest.status != STATUS_OK || latest.paused) return (false, bytes(""));
-        if (historical.status != STATUS_OK || historical.environmentId != latest.environmentId || historical.target != latest.target) {
+        if (
+            historical.status != STATUS_OK ||
+            historical.environmentId != latest.environmentId ||
+            historical.target != latest.target ||
+            historical.registry != latest.registry
+        ) {
             return (false, bytes(""));
         }
 
@@ -106,17 +112,19 @@ contract BonqDaoOracleManipulationTrap is ITrap {
         uint256 breachCount;
         for (uint256 i = 0; i < checked; i++) {
             CollectOutput memory sample = abi.decode(data[i], (CollectOutput));
-            if (sample.status != STATUS_OK || sample.paused || sample.target != latest.target) continue;
+            if (
+                sample.status != STATUS_OK ||
+                sample.paused ||
+                sample.target != latest.target ||
+                sample.environmentId != latest.environmentId ||
+                sample.registry != latest.registry
+            ) continue;
             if (sample.observedBlockNumber >= historical.observedBlockNumber) {
                 if (_divergence(sample.reportedPrice, sample.referencePrice) > PRICE_DIVERGENCE_BPS && sample.collateralRatio < MIN_COLLATERAL_RATIO) breachCount++;
             }
         }
 
-        uint256 deteriorationSignals;
-        if (latest.observedBlockNumber >= historical.observedBlockNumber) deteriorationSignals++;
-        if (latest.target == historical.target) deteriorationSignals++;
-
-        if (breachCount < MIN_BREACH_COUNT || deteriorationSignals < 2) return (false, bytes(""));
+        if (breachCount < MIN_BREACH_COUNT) return (false, bytes(""));
 
         TrapAlert memory alert = TrapAlert({
             invariantId: INVARIANT_ID,
@@ -125,7 +133,7 @@ contract BonqDaoOracleManipulationTrap is ITrap {
             expected: MIN_COLLATERAL_RATIO,
             blockNumber: latest.observedBlockNumber,
             environmentId: latest.environmentId,
-            context: abi.encode(latest.registry, latest.status, latest.reportedPrice, latest.referencePrice, latest.lastUpdate, latest.aggregateCollateral, latest.aggregateDebt, latest.collateralRatio, breachCount, deteriorationSignals)
+            context: abi.encode(latest.registry, latest.status, latest.reportedPrice, latest.referencePrice, latest.lastUpdate, latest.aggregateCollateral, latest.aggregateDebt, latest.collateralRatio, breachCount)
         });
         return (true, abi.encode(alert));
     }
@@ -136,12 +144,12 @@ contract BonqDaoOracleManipulationTrap is ITrap {
             registry: REGISTRY,
             target: target,
             status: status,
-            reportedPrice: 100e18,
-                    referencePrice: 100e18,
-                    lastUpdate: 100,
-                    aggregateCollateral: 2_000_000e18,
-                    aggregateDebt: 800_000e18,
-                    collateralRatio: 25000,
+            reportedPrice: 0,
+            referencePrice: 0,
+            lastUpdate: 0,
+            aggregateCollateral: 0,
+            aggregateDebt: 0,
+            collateralRatio: 0,
             observedBlockNumber: block.number,
             paused: false
         }));
